@@ -1,0 +1,99 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Restaurante {
+  id          Int          @id @default(autoincrement())
+  nombre      String       @unique
+  direccion   String
+  descripcion String?     
+  usuario_id  Int
+  foto        String?
+  usuario     Usuario     @relation(fields: [usuario_id], references: [id], onDelete: Cascade)
+  categorias  Categorias[]
+  productos   Productos[]
+  ventas      Ventas[]
+  mesas       Mesas[]
+  detalleVentas DetalleVenta[]  
+}
+
+model Mesas {
+  id             Int         @id @default(autoincrement())
+  numero_mesa    Int
+  id_restaurante Int
+  restaurante    Restaurante @relation(fields: [id_restaurante], references: [id], onDelete: Cascade)
+  ventas         Ventas[]
+  qr             String?
+
+  @@unique([numero_mesa, id_restaurante])
+}
+
+model Categorias {
+  id             Int         @id @default(autoincrement())
+  id_restaurante Int
+  nombre         String
+  descripcion    String?
+  restaurante    Restaurante @relation(fields: [id_restaurante], references: [id], onDelete: Cascade)
+  productos      Productos[]
+}
+
+model Productos {
+  id             Int            @id @default(autoincrement())
+  id_restaurante Int
+  nombre         String
+  descripcion    String?
+  categoria_id   Int
+  foto           String?
+  precio         Float
+  disponible     Boolean        @default(true)
+  categoria      Categorias     @relation(fields: [categoria_id], references: [id], onDelete: Cascade)
+  restaurante    Restaurante    @relation(fields: [id_restaurante], references: [id], onDelete: Cascade)
+  detalleVentas  DetalleVenta[]
+}
+
+model Usuario {
+  id                  Int           @id @default(autoincrement())
+  usuario             String        @unique
+  nombre              String
+  dni                 Int           @unique
+  fecha_de_nacimiento DateTime
+  contraseña         String
+  restaurantes        Restaurante[]
+}
+
+model Ventas {
+  id                 Int            @id @default(autoincrement())
+  comprador_nombre   String
+  comprador_apellido String  @default("Desconocido")
+  comprador_telefono String?
+  dni_comprador      Int?
+  id_mesa            Int
+  id_restaurante     Int
+  monto              Float
+  metodo_de_pago     String
+  estado             String  @default("Pendiente")
+  merchantOrderId String  @unique
+  preferenceID       String?
+  fecha              DateTime       @default(now())
+  restaurante        Restaurante    @relation(fields: [id_restaurante], references: [id], onDelete: Cascade)
+  mesa               Mesas          @relation(fields: [id_mesa], references: [id], onDelete: Cascade)
+  detalleVentas      DetalleVenta[]
+}
+
+model DetalleVenta {
+  id              Int          @id @default(autoincrement())
+  venta_id        Int
+  producto_id     Int
+  id_restaurante  Int
+  cantidad        Int
+  precio_unitario Float
+  fecha           DateTime     @default(now())
+  venta           Ventas       @relation(fields: [venta_id], references: [id], onDelete: Cascade)
+  producto        Productos    @relation(fields: [producto_id], references: [id], onDelete: Cascade)
+  restaurante     Restaurante  @relation(fields: [id_restaurante], references: [id], onDelete: Cascade)
+}
